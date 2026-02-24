@@ -25,10 +25,10 @@ jobs:
       - name: Build project
         shell: msys2 {0}
         run: |
-          gcc -g -Wall -Wextra -c -o main.o main.c
+          gcc -g -c -o gui/gui.o gui/gui.c
+          gcc -g -c -o main.o main.c
           windres -F pe-x86-64 manifest.rc -o manifest.o
-          gcc -g -Wall -Wextra -c -o gui/gui.o gui/gui.c
-          gcc -g -Wall -Wextra -o wintouchg.exe main.o manifest.o gui/gui.o -lgdi32
+          gcc -g -o wintouchg.exe main.o manifest.o gui/gui.o -lgdi32
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
