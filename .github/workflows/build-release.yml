@@ -1,0 +1,58 @@
+name: Build and Release wintouchg
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+          version: latest
+
+      - name: Build project
+        run: |
+          mingw32-make.exe wintouchg.exe
+        shell: cmd
+        continue-on-error: true
+        env:
+          CFLAGS: -g -Wall -Wextra
+
+      - name: Build with fallback
+        if: failure()
+        run: |
+          gcc -g -Wall -Wextra -c -o main.o main.c
+          windres -F pe-x86-64 manifest.rc -o manifest.o
+          gcc -g -Wall -Wextra -c -o gui/gui.o gui/gui.c
+          gcc -g -Wall -Wextra -o wintouchg.exe main.o manifest.o gui/gui.o -lgdi32
+        shell: cmd
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: wintouchg.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: wintouchg-executable
+          path: wintouchg.exe
+          if-no-files-found: ignore
